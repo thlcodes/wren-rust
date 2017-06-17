@@ -1,0 +1,15 @@
+[package]
+name = "wren"
+version = "0.1.0"
+authors = ["Calvin Ikenberry"]
+description = "Bindings to the Wren scripting language API"
+build = "build.rs"
+readme = "README.md"
+keywords = ["wren", "bindings", "wrapper"]
+license = "MIT"
+
+[dependencies]
+libc = "0.2"
+
+[dev-dependencies]
+lazy_static = "0.2"
