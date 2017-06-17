@@ -1,6 +1,6 @@
 [package]
 name = "wren_rust"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["Calvin Ikenberry"]
 description = "Bindings to the Wren scripting language API"
 build = "build.rs"
@@ -8,6 +8,7 @@ readme = "README.md"
 keywords = ["wren", "bindings", "wrapper"]
 license = "MIT"
 repository = "https://github.com/calviken/wren-rust"
+documentation = "https://docs.rs/wren_rust"
 
 [dependencies]
 libc = "0.2"
