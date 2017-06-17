@@ -109,8 +109,8 @@ pub fn _wrap_load_module_fn<F: Fn(&mut VM, &str) -> Option<String>,
          name: *const c_char)
          -> *mut c_char {
 
-            let mut vm = VM::from_ptr(vm);
-            let name = CStr::from_ptr(name).to_str().unwrap();
+        let mut vm = VM::from_ptr(vm);
+        let name = CStr::from_ptr(name).to_str().unwrap();
         let source = mem::transmute::<&(), &F>(&())(&mut vm, name);
         if let Some(source) = source {
             let buffer = mem::transmute::<&(), &Alloc>(&())(ptr::null_mut(), source.len());
@@ -185,15 +185,12 @@ pub fn _wrap_error_fn<F: Fn(&mut VM, ErrorType, &str, i32, &str)>(_: F) -> ::Err
                                                                        module: *const c_char,
                                                                        line: c_int,
                                                                        message: *const c_char) {
-        /*
+        let mut vm = VM::from_ptr(vm);
         let module = if module == ptr::null() {
             ""
         } else {
             CStr::from_ptr(module).to_str().unwrap()
         };
-         */
-        let mut vm = VM::from_ptr(vm);
-        let module = CStr::from_ptr(module).to_str().unwrap_or("");
         let message = CStr::from_ptr(message).to_str().unwrap();
         mem::transmute::<&(), &F>(&())(&mut vm, _type, module, line, message);
     }
