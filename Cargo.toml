@@ -1,5 +1,5 @@
 [package]
-name = "wren"
+name = "wren_rust"
 version = "0.1.0"
 authors = ["Calvin Ikenberry"]
 description = "Bindings to the Wren scripting language API"
