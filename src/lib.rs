@@ -3,10 +3,10 @@
 //! For complete documentation on each type and function, refer to `wren.h` in the official Wren repository.
 
 extern crate libc;
+extern crate wren_sys as ffi;
 
 #[macro_use]
 pub mod macros;
-mod ffi;
 mod vm;
 
 /// Typedef for a raw pointer.

@@ -1,0 +1,15 @@
+[package]
+name = "wren-sys"
+version = "0.2.3"
+authors = ["Calvin Ikenberry"]
+description = "FFI bindings to the Wren scripting language API"
+readme = "README.md"
+keywords = ["wren", "bindings", "ffi"]
+license = "MIT"
+homepage = "https://github.com/calviken/wren-rust/wren-sys"
+repository = "https://github.com/calviken/wren-rust/wren-sys"
+documentation = "https://docs.rs/wren-sys"
+build = "build.rs"
+
+[dependencies]
+libc = "0.2"

@@ -1,14 +1,18 @@
 [package]
 name = "wren"
-version = "0.1.4"
+version = "0.1.5"
 authors = ["Calvin Ikenberry"]
 description = "Bindings to the Wren scripting language API"
-build = "build.rs"
 readme = "README.md"
 keywords = ["wren", "bindings", "wrapper"]
 license = "MIT"
+homepage = "https://github.com/calviken/wren-rust"
 repository = "https://github.com/calviken/wren-rust"
 documentation = "https://docs.rs/wren"
+
+[dependencies.wren-sys]
+version = "0.2.3"
+path = "./wren-sys"
 
 [dependencies]
 libc = "0.2"

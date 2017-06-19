@@ -1,8 +1,6 @@
-#![allow(non_camel_case_types)]
-#![allow(non_snake_case)]
 #![allow(improper_ctypes)]
-#![allow(dead_code)]
 
+extern crate libc;
 use libc::{c_void, size_t, c_char, c_int, c_double};
 
 #[repr(C)]
