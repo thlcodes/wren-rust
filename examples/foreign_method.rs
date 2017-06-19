@@ -1,10 +1,10 @@
 #[macro_use]
-extern crate wren_rust;
+extern crate wren;
 #[macro_use]
 extern crate lazy_static;
 
 use std::collections::HashMap;
-use wren_rust::{VM, Configuration, ForeignMethodFn};
+use wren::{VM, Configuration, ForeignMethodFn};
 
 lazy_static!  {
     static ref FOREIGN_METHODS: HashMap<&'static str, ForeignMethodFn> = {
