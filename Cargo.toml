@@ -1,6 +1,6 @@
 [package]
 name = "wren"
-version = "0.1.5"
+version = "0.1.6"
 authors = ["Calvin Ikenberry"]
 description = "Bindings to the Wren scripting language API"
 readme = "README.md"
@@ -11,7 +11,7 @@ repository = "https://github.com/calviken/wren-rust"
 documentation = "https://docs.rs/wren"
 
 [dependencies.wren-sys]
-version = "0.2.3"
+version = "~0.2.3"
 path = "./wren-sys"
 
 [dependencies]
