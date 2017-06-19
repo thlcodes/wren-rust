@@ -6,8 +6,8 @@ description = "FFI bindings to the Wren scripting language API"
 readme = "README.md"
 keywords = ["wren", "bindings", "ffi"]
 license = "MIT"
-homepage = "https://github.com/calviken/wren-rust/wren-sys"
-repository = "https://github.com/calviken/wren-rust/wren-sys"
+homepage = "https://github.com/calviken/wren-rust"
+repository = "https://github.com/calviken/wren-rust"
 documentation = "https://docs.rs/wren-sys"
 build = "build.rs"
 
