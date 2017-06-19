@@ -42,16 +42,8 @@ pub type WrenErrorFn = Option<unsafe extern "C" fn(vm: *mut WrenVM,
 #[derive(Copy, Clone)]
 #[repr(C)]
 pub struct WrenForeignClassMethods {
-    allocate: WrenForeignMethodFn,
-    finalize: WrenFinalizerFn,
-}
-
-impl WrenForeignClassMethods {
-    pub fn new(allocate: WrenForeignMethodFn,
-               finalize: WrenFinalizerFn)
-               -> WrenForeignClassMethods {
-        WrenForeignClassMethods { allocate, finalize }
-    }
+    pub allocate: WrenForeignMethodFn,
+    pub finalize: WrenFinalizerFn,
 }
 
 pub type WrenBindForeignClassFn = Option<unsafe extern "C" fn(vm: *mut WrenVM,

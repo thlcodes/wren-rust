@@ -156,11 +156,11 @@ pub fn _wrap_bind_foreign_class_fn<F: Fn(&mut VM, &str, &str) -> ::ForeignClassM
         (vm: *mut ffi::WrenVM,
          module: *const c_char,
          class_name: *const c_char)
-         -> ::ForeignClassMethods {
+         -> ffi::WrenForeignClassMethods {
         let mut vm = VM::from_ptr(vm);
         let module = CStr::from_ptr(module).to_str().unwrap();
         let class_name = CStr::from_ptr(class_name).to_str().unwrap();
-        mem::transmute::<&(), &F>(&())(&mut vm, module, class_name)
+        mem::transmute::<&(), &F>(&())(&mut vm, module, class_name).get()
     }
     _assert_size::<F>();
     Some(f::<F>)

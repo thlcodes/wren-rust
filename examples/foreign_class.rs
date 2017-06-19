@@ -30,8 +30,12 @@ lazy_static! {
 lazy_static! {
     static ref FOREIGN_CLASSES: HashMap<&'static str, ForeignClassMethods> = {
         let mut map = HashMap::new();
-        map.insert("vectorVec3", ForeignClassMethods::new(wren_foreign_method_fn!(vec3_allocate),
-                                                          wren_finalizer_fn!(vec3_finalize)));
+
+        let mut vec3_class_methods = ForeignClassMethods::new();
+        vec3_class_methods.set_allocate_fn(wren_foreign_method_fn!(vec3_allocate));
+        vec3_class_methods.set_finalize_fn(wren_finalizer_fn!(vec3_finalize));
+
+        map.insert("vectorVec3", vec3_class_methods);
         map
     };
 }

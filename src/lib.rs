@@ -14,7 +14,6 @@ pub type Pointer = *mut libc::c_void;
 
 pub use ffi::WrenErrorType as ErrorType;
 pub use ffi::WrenInterpretResult as InterpretResult;
-pub use ffi::WrenForeignClassMethods as ForeignClassMethods;
 pub use ffi::WrenType as Type;
 
 pub use ffi::WrenReallocateFn as ReallocateFn;
@@ -27,4 +26,5 @@ pub use ffi::WrenWriteFn as WriteFn;
 pub use ffi::WrenErrorFn as ErrorFn;
 
 pub use self::vm::Configuration;
+pub use self::vm::ForeignClassMethods;
 pub use self::vm::VM;
