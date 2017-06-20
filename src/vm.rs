@@ -1,6 +1,7 @@
 use std::mem;
 use std::slice;
 use std::ffi::{CStr, CString};
+use std::io;
 use libc::{c_int, c_char};
 use ffi;
 use {ErrorType, Type, Pointer, InterpretResult};
@@ -167,6 +168,17 @@ impl VM {
     pub fn interpret(&mut self, source: &str) -> InterpretResult {
         let source_cstr = CString::new(source).unwrap();
         unsafe { ffi::wrenInterpret(self.raw, source_cstr.as_ptr()) }
+    }
+
+    /// Convenience function that loads a script from a file and interprets it.
+    pub fn interpret_file(&mut self, path: &str) -> Result<InterpretResult, io::Error> {
+        use std::fs::File;
+        use std::io::Read;
+
+        let mut buffer = String::new();
+        let mut file = File::open(path)?;
+        file.read_to_string(&mut buffer)?;
+        Ok(self.interpret(&buffer))
     }
 
     /// Maps to `wrenMakeCallHandle`.
