@@ -23,7 +23,7 @@ pub type WrenBindForeignMethodFn = Option<unsafe extern "C" fn(vm: *mut WrenVM,
                                                                -> WrenForeignMethodFn>;
 pub type WrenWriteFn = Option<unsafe extern "C" fn(vm: *mut WrenVM, text: *const c_char)>;
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, PartialEq, Debug)]
 #[repr(C)]
 pub enum WrenErrorType {
     Compile,
@@ -63,7 +63,7 @@ pub struct WrenConfiguration {
     pub user_data: *mut c_void,
 }
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, PartialEq, Debug)]
 #[repr(C)]
 pub enum WrenInterpretResult {
     Success,
@@ -71,7 +71,7 @@ pub enum WrenInterpretResult {
     RuntimeError,
 }
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, PartialEq, Debug)]
 #[repr(C)]
 pub enum WrenType {
     Bool,
