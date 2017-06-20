@@ -1,5 +1,6 @@
 use std::mem;
 use std::slice;
+use std::ptr;
 use std::ffi::{CStr, CString};
 use std::io;
 use libc::{c_int, c_char};
@@ -219,10 +220,14 @@ impl VM {
     }
 
     /// Maps to `wrenGetSlotBytes`.
-    pub fn get_slot_bytes(&mut self, slot: i32) -> &[u8] {
+    pub fn get_slot_bytes(&mut self, slot: i32) -> Option<&[u8]> {
         let mut length = unsafe { mem::uninitialized() };
         let ptr = unsafe { ffi::wrenGetSlotBytes(self.raw, slot, &mut length) };
-        unsafe { slice::from_raw_parts(ptr as *const u8, length as usize) }
+        if ptr == ptr::null() {
+            None
+        } else {
+            Some(unsafe { slice::from_raw_parts(ptr as *const u8, length as usize) })
+        }
     }
 
     /// Maps to `wrenGetSlotDouble`.
@@ -236,9 +241,13 @@ impl VM {
     }
 
     /// Maps to `wrenGetSlotString`.
-    pub fn get_slot_string(&mut self, slot: i32) -> &str {
+    pub fn get_slot_string(&mut self, slot: i32) -> Option<&str> {
         let ptr = unsafe { ffi::wrenGetSlotString(self.raw, slot) };
-        unsafe { CStr::from_ptr(ptr).to_str().unwrap() }
+        if ptr == ptr::null() {
+            None
+        } else {
+            Some(unsafe { CStr::from_ptr(ptr).to_str().unwrap() })
+        }
     }
 
     /// Maps to `wrenGetSlotHandle`.
