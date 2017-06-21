@@ -65,9 +65,9 @@ lazy_static! {
 
 fn vec3_allocate(vm: &mut VM) {
     let ptr = vm.set_slot_new_foreign(0, 0, mem::size_of::<Vec3>()) as *mut Vec3;
-    let vec = Vec3::new(vm.get_slot_double(1),
-                        vm.get_slot_double(2),
-                        vm.get_slot_double(3));
+    let vec = Vec3::new(vm.get_slot_double(1).unwrap(),
+                        vm.get_slot_double(2).unwrap(),
+                        vm.get_slot_double(3).unwrap());
     unsafe { ptr::write(ptr, vec) };
 }
 
@@ -76,21 +76,21 @@ fn vec3_finalize(_: Pointer) {
 }
 
 fn vec3_norm(vm: &mut VM) {
-    let vec = vm.get_slot_foreign(0) as *mut Vec3;
+    let vec = vm.get_slot_foreign(0).unwrap() as *mut Vec3;
     let result = unsafe { (*vec).norm() };
     vm.set_slot_double(0, result);
 }
 
 fn vec3_dot(vm: &mut VM) {
-    let lhs = vm.get_slot_foreign(0) as *mut Vec3;
-    let rhs = vm.get_slot_foreign(1) as *mut Vec3;
+    let lhs = vm.get_slot_foreign(0).unwrap() as *mut Vec3;
+    let rhs = vm.get_slot_foreign(1).unwrap() as *mut Vec3;
     let result = unsafe { (*lhs).dot(&*rhs) };
     vm.set_slot_double(0, result);
 }
 
 fn vec3_cross(vm: &mut VM) {
-    let lhs = vm.get_slot_foreign(0) as *mut Vec3;
-    let rhs = vm.get_slot_foreign(1) as *mut Vec3;
+    let lhs = vm.get_slot_foreign(0).unwrap() as *mut Vec3;
+    let rhs = vm.get_slot_foreign(1).unwrap() as *mut Vec3;
     let result = unsafe { (*lhs).cross(&*rhs) };
 
     // This currently causes Wren to fail an assertion check.
@@ -100,38 +100,38 @@ fn vec3_cross(vm: &mut VM) {
 }
 
 fn vec3_get_x(vm: &mut VM) {
-    let vec = vm.get_slot_foreign(0) as *mut Vec3;
+    let vec = vm.get_slot_foreign(0).unwrap() as *mut Vec3;
     let x = unsafe { (*vec).x };
     vm.set_slot_double(0, x);
 }
 
 fn vec3_set_x(vm: &mut VM) {
-    let vec = vm.get_slot_foreign(0) as *mut Vec3;
-    let x = vm.get_slot_double(1);
+    let vec = vm.get_slot_foreign(0).unwrap() as *mut Vec3;
+    let x = vm.get_slot_double(1).unwrap();
     unsafe { (*vec).x = x };
 }
 
 fn vec3_get_y(vm: &mut VM) {
-    let vec = vm.get_slot_foreign(0) as *mut Vec3;
+    let vec = vm.get_slot_foreign(0).unwrap() as *mut Vec3;
     let y = unsafe { (*vec).y };
     vm.set_slot_double(0, y);
 }
 
 fn vec3_set_y(vm: &mut VM) {
-    let vec = vm.get_slot_foreign(0) as *mut Vec3;
-    let y = vm.get_slot_double(1);
+    let vec = vm.get_slot_foreign(0).unwrap() as *mut Vec3;
+    let y = vm.get_slot_double(1).unwrap();
     unsafe { (*vec).y = y };
 }
 
 fn vec3_get_z(vm: &mut VM) {
-    let vec = vm.get_slot_foreign(0) as *mut Vec3;
+    let vec = vm.get_slot_foreign(0).unwrap() as *mut Vec3;
     let z = unsafe { (*vec).z };
     vm.set_slot_double(0, z);
 }
 
 fn vec3_set_z(vm: &mut VM) {
-    let vec = vm.get_slot_foreign(0) as *mut Vec3;
-    let z = vm.get_slot_double(1);
+    let vec = vm.get_slot_foreign(0).unwrap() as *mut Vec3;
+    let z = vm.get_slot_double(1).unwrap();
     unsafe { (*vec).z = z };
 }
 

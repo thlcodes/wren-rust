@@ -1,6 +1,5 @@
 use std::mem;
 use std::slice;
-use std::ptr;
 use std::ffi::{CStr, CString};
 use std::io;
 use libc::{c_int, c_char};
@@ -44,9 +43,7 @@ fn default_load_module(_: &mut VM, name: &str) -> Option<String> {
     if result.is_ok() { Some(buffer) } else { None }
 }
 
-/// Wrapper around a `WrenConfiguration`.
-///
-/// Refer to `wren.h` for info on each field.
+/// Wrapper around a `WrenConfiguration`. Refer to `wren.h` for info on each field.
 pub struct Configuration(ffi::WrenConfiguration);
 
 impl Configuration {
@@ -134,9 +131,15 @@ impl ForeignClassMethods {
     }
 }
 
-/// Wrapper around a `WrenVM`.
+/// Wrapper around a `WrenVM`. Refer to `wren.h` for info on each function.
 ///
-/// Refer to wren.h for info on each function.
+/// Some functions have some additional safety features. In particular:
+///
+/// 1. Functions that retrieve slot values will perform type checking and return an Option.
+///
+/// 2. `wrenEnsureSlots` is called automatically where needed.
+///
+/// 3. Functions that operate on lists will validate their parameters.
 pub struct VM {
     raw: *mut ffi::WrenVM,
     owned: bool,
@@ -204,65 +207,97 @@ impl VM {
         unsafe { ffi::wrenGetSlotCount(self.raw) }
     }
 
-    /// Maps to `wrenEnsureSlots`.
-    pub fn ensure_slots(&mut self, num_slots: i32) {
+    // This gets called automatically where needed.
+    fn ensure_slots(&mut self, num_slots: i32) {
         unsafe { ffi::wrenEnsureSlots(self.raw, num_slots) }
     }
 
     /// Maps to `wrenGetSlotType`.
     pub fn get_slot_type(&mut self, slot: i32) -> Type {
-        unsafe { ffi::wrenGetSlotType(self.raw, slot) }
+        if self.get_slot_count() > slot {
+            unsafe { ffi::wrenGetSlotType(self.raw, slot) }
+        } else {
+            Type::Null
+        }
     }
 
     /// Maps to `wrenGetSlotBool`.
-    pub fn get_slot_bool(&mut self, slot: i32) -> bool {
-        unsafe { ffi::wrenGetSlotBool(self.raw, slot) != 0 }
+    ///
+    /// Performs type checking on the slot, returning `None` if there's a mismatch.
+    pub fn get_slot_bool(&mut self, slot: i32) -> Option<bool> {
+        if self.get_slot_type(slot) == Type::Bool {
+            Some(unsafe { ffi::wrenGetSlotBool(self.raw, slot) != 0 })
+        } else {
+            None
+        }
     }
 
     /// Maps to `wrenGetSlotBytes`.
+    ///
+    /// Performs type checking on the slot, returning `None` if there's a mismatch.
     pub fn get_slot_bytes(&mut self, slot: i32) -> Option<&[u8]> {
-        let mut length = unsafe { mem::uninitialized() };
-        let ptr = unsafe { ffi::wrenGetSlotBytes(self.raw, slot, &mut length) };
-        if ptr == ptr::null() {
-            None
-        } else {
+        if self.get_slot_type(slot) == Type::String {
+            let mut length = unsafe { mem::uninitialized() };
+            let ptr = unsafe { ffi::wrenGetSlotBytes(self.raw, slot, &mut length) };
             Some(unsafe { slice::from_raw_parts(ptr as *const u8, length as usize) })
+        } else {
+            None
         }
     }
 
     /// Maps to `wrenGetSlotDouble`.
-    pub fn get_slot_double(&mut self, slot: i32) -> f64 {
-        unsafe { ffi::wrenGetSlotDouble(self.raw, slot) }
+    ///
+    /// Performs type checking on the slot, returning `None` if there's a mismatch.
+    pub fn get_slot_double(&mut self, slot: i32) -> Option<f64> {
+        if self.get_slot_type(slot) == Type::Num {
+            Some(unsafe { ffi::wrenGetSlotDouble(self.raw, slot) })
+        } else {
+            None
+        }
     }
 
     /// Maps to `wrenGetSlotForeign`.
-    pub fn get_slot_foreign(&mut self, slot: i32) -> Pointer {
-        unsafe { ffi::wrenGetSlotForeign(self.raw, slot) }
+    ///
+    /// Performs type checking on the slot, returning `None` if there's a mismatch.
+    pub fn get_slot_foreign(&mut self, slot: i32) -> Option<Pointer> {
+        if self.get_slot_type(slot) == Type::Foreign {
+            Some(unsafe { ffi::wrenGetSlotForeign(self.raw, slot) })
+        } else {
+            None
+        }
     }
 
     /// Maps to `wrenGetSlotString`.
+    ///
+    /// Performs type checking on the slot, returning `None` if there's a mismatch.
     pub fn get_slot_string(&mut self, slot: i32) -> Option<&str> {
-        let ptr = unsafe { ffi::wrenGetSlotString(self.raw, slot) };
-        if ptr == ptr::null() {
-            None
-        } else {
+        if self.get_slot_type(slot) == Type::String {
+            let ptr = unsafe { ffi::wrenGetSlotString(self.raw, slot) };
             Some(unsafe { CStr::from_ptr(ptr).to_str().unwrap() })
+        } else {
+            None
         }
     }
 
     /// Maps to `wrenGetSlotHandle`.
-    pub fn get_slot_handle(&mut self, slot: i32) -> Handle {
-        let handle = unsafe { ffi::wrenGetSlotHandle(self.raw, slot) };
-        Handle(handle)
+    pub fn get_slot_handle(&mut self, slot: i32) -> Option<Handle> {
+        if self.get_slot_count() > slot {
+            let handle = unsafe { ffi::wrenGetSlotHandle(self.raw, slot) };
+            Some(Handle(handle))
+        } else {
+            None
+        }
     }
 
     /// Maps to `wrenSetSlotBool`.
     pub fn set_slot_bool(&mut self, slot: i32, value: bool) {
+        self.ensure_slots(slot + 1);
         unsafe { ffi::wrenSetSlotBool(self.raw, slot, value as c_int) }
     }
 
     /// Maps to `wrenSetSlotBytes`.
     pub fn set_slot_bytes(&mut self, slot: i32, bytes: &[u8]) {
+        self.ensure_slots(slot + 1);
         let ptr = bytes.as_ptr() as *const c_char;
         let len = bytes.len();
         unsafe { ffi::wrenSetSlotBytes(self.raw, slot, ptr, len) }
@@ -270,53 +305,76 @@ impl VM {
 
     /// Maps to `wrenSetSlotDouble`.
     pub fn set_slot_double(&mut self, slot: i32, value: f64) {
+        self.ensure_slots(slot + 1);
         unsafe { ffi::wrenSetSlotDouble(self.raw, slot, value) }
     }
 
     /// Maps to `wrenSetSlotNewForeign`.
     pub fn set_slot_new_foreign(&mut self, slot: i32, class_slot: i32, size: usize) -> Pointer {
+        self.ensure_slots(slot + 1);
         unsafe { ffi::wrenSetSlotNewForeign(self.raw, slot, class_slot, size) }
     }
 
     /// Maps to `wrenSetSlotNewList`.
     pub fn set_slot_new_list(&mut self, slot: i32) {
+        self.ensure_slots(slot + 1);
         unsafe { ffi::wrenSetSlotNewList(self.raw, slot) }
     }
 
     /// Maps to `wrenSetSlotNull`.
     pub fn set_slot_null(&mut self, slot: i32) {
+        self.ensure_slots(slot + 1);
         unsafe { ffi::wrenSetSlotNull(self.raw, slot) }
     }
 
     /// Maps to `wrenSetSlotString`.
     pub fn set_slot_string(&mut self, slot: i32, s: &str) {
+        self.ensure_slots(slot + 1);
         let cstr = CString::new(s).unwrap();
         unsafe { ffi::wrenSetSlotString(self.raw, slot, cstr.as_ptr()) }
     }
 
     /// Maps to `wrenSetSlotHandle`.
     pub fn set_slot_handle(&mut self, slot: i32, handle: Handle) {
+        self.ensure_slots(slot + 1);
         unsafe { ffi::wrenSetSlotHandle(self.raw, slot, handle.0) }
     }
 
     /// Maps to `wrenGetListCount`.
     pub fn get_list_count(&mut self, slot: i32) -> i32 {
-        unsafe { ffi::wrenGetListCount(self.raw, slot) }
+        if self.get_slot_type(slot) == Type::List {
+            unsafe { ffi::wrenGetListCount(self.raw, slot) }
+        } else {
+            0
+        }
     }
 
     /// Maps to `wrenGetListElement`.
     pub fn get_list_element(&mut self, list_slot: i32, index: i32, element_slot: i32) {
-        unsafe { ffi::wrenGetListElement(self.raw, list_slot, index, element_slot) }
+        self.ensure_slots(element_slot + 1);
+        if self.get_slot_type(list_slot) == Type::List && self.get_list_count(list_slot) > index {
+            unsafe { ffi::wrenGetListElement(self.raw, list_slot, index, element_slot) }
+        } else {
+            self.set_slot_null(element_slot)
+        }
     }
 
-    // Maybe rename this to be consistent with get_list_element?
     /// Maps to `wrenInsertInList`.
-    pub fn insert_in_list(&mut self, list_slot: i32, index: i32, element_slot: i32) {
-        unsafe { ffi::wrenInsertInList(self.raw, list_slot, index, element_slot) }
+    ///
+    /// Returns `true` if insertion was successful.
+    pub fn insert_in_list(&mut self, list_slot: i32, index: i32, element_slot: i32) -> bool {
+        if self.get_slot_type(list_slot) == Type::List && self.get_list_count(list_slot) > index &&
+           self.get_slot_count() > element_slot {
+            unsafe { ffi::wrenInsertInList(self.raw, list_slot, index, element_slot) }
+            true
+        } else {
+            false
+        }
     }
 
     /// Maps to `wrenGetVariable`.
     pub fn get_variable(&mut self, module: &str, name: &str, slot: i32) {
+        self.ensure_slots(slot + 1);
         let module_cstr = CString::new(module).unwrap();
         let name_cstr = CString::new(name).unwrap();
         unsafe { ffi::wrenGetVariable(self.raw, module_cstr.as_ptr(), name_cstr.as_ptr(), slot) }

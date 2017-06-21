@@ -16,12 +16,12 @@ lazy_static!  {
 }
 
 fn sin(vm: &mut VM) {
-    let value = vm.get_slot_double(1);
+    let value = vm.get_slot_double(1).unwrap();
     vm.set_slot_double(0, value.sin());
 }
 
 fn cos(vm: &mut VM) {
-    let value = vm.get_slot_double(1);
+    let value = vm.get_slot_double(1).unwrap();
     vm.set_slot_double(0, value.cos());
 }
 
