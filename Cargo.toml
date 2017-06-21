@@ -1,6 +1,6 @@
 [package]
 name = "wren"
-version = "0.1.7"
+version = "0.1.8"
 authors = ["Calvin Ikenberry"]
 description = "Bindings to the Wren scripting language API"
 readme = "README.md"
