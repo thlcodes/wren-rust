@@ -34,9 +34,16 @@ impl Vec3 {
     }
 }
 
+impl ToString for Vec3 {
+    fn to_string(&self) -> String {
+        format!("{}, {}, {}", self.x, self.y, self.z)
+    }
+}
+
 lazy_static! {
     static ref FOREIGN_METHODS: HashMap<&'static str, ForeignMethodFn> = {
         let mut map = HashMap::new();
+        map.insert("vectorVec3toString", wren_foreign_method_fn!(vec3_to_string));
         map.insert("vectorVec3norm()", wren_foreign_method_fn!(vec3_norm));
         map.insert("vectorVec3dot(_)", wren_foreign_method_fn!(vec3_dot));
         map.insert("vectorVec3cross(_)", wren_foreign_method_fn!(vec3_cross));
@@ -75,6 +82,11 @@ fn vec3_finalize(_: Pointer) {
     // do nothing.
 }
 
+fn vec3_to_string(vm: &mut VM) {
+    let vec = vm.get_slot_foreign(0).unwrap() as *mut Vec3;
+    vm.set_slot_string(0, unsafe { &(*vec).to_string() });
+}
+
 fn vec3_norm(vm: &mut VM) {
     let vec = vm.get_slot_foreign(0).unwrap() as *mut Vec3;
     let result = unsafe { (*vec).norm() };
@@ -93,8 +105,8 @@ fn vec3_cross(vm: &mut VM) {
     let rhs = vm.get_slot_foreign(1).unwrap() as *mut Vec3;
     let result = unsafe { (*lhs).cross(&*rhs) };
 
-    // This currently causes Wren to fail an assertion check.
-    // It seems like there's currently no way to create a foreign class object directly from the API.
+    // Retrieve the Vec3 class and create a new object.
+    vm.get_variable("vector", "Vec3", 0);
     let result_ptr = vm.set_slot_new_foreign(0, 0, mem::size_of::<Vec3>()) as *mut Vec3;
     unsafe { ptr::write(result_ptr, result) };
 }
@@ -178,10 +190,13 @@ fn load_module(_: &mut VM, name: &str) -> Option<String> {
 fn main() {
     let source = r#"
 import "vector" for Vec3
-var vec = Vec3.new(1.0, 2.0, 3.0)
-var vec2 = Vec3.new(2.0, 4.0, 6.0)
-System.print("norm = %(vec.norm())")
-System.print("dot = %(vec.dot(vec2))")
+var vec = Vec3.new(1, 2, 3)
+var vec2 = Vec3.new(45, 30, 15)
+System.print("vec = %(vec)")
+System.print("vec2 = %(vec2)")
+System.print("vec.norm() = %(vec.norm())")
+System.print("vec.dot(vec2) = %(vec.dot(vec2))")
+System.print("vec.cross(vec2) = %(vec.cross(vec2))")
 "#;
     let mut cfg = Configuration::new();
     cfg.set_bind_foreign_method_fn(wren_bind_foreign_method_fn!(bind_method));
