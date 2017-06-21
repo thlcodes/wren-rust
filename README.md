@@ -9,7 +9,11 @@ I'll do my best to keep these bindings up-to-date as new features are added.
 If you notice a missing feature, feel free to create an issue or pull request.
 
 # Safety
-There currently aren't any safeguards to protect you from doing something potentially unsafe. 
+Wren doesn't do any kind of validation outside of a few assertions in debug builds. 
+This means it's very easy to get Undefined Behavior in release builds if you're not careful (especially when processing arbitrary scripts).
 
-In debug builds, Wren makes assertions that prevent undefined behavior, but these are disabled in release builds.
+Most functions in this crate include additional safety features to help avoid these problems. In particular:
 
+1. Functions that retrieve slot values will perform type checking and return an Option.
+2. `wrenEnsureSlots` is called automatically when setting slot values.
+3. Most functions validate their parameters before calling Wren. 
