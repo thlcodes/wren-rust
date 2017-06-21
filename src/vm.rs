@@ -2,6 +2,7 @@ use std::mem;
 use std::slice;
 use std::ffi::{CStr, CString};
 use std::io;
+use std::rc::Rc;
 use libc::{c_int, c_char};
 use ffi;
 use {ErrorType, Type, Pointer, InterpretResult};
@@ -43,7 +44,7 @@ fn default_load_module(_: &mut VM, name: &str) -> Option<String> {
     if result.is_ok() { Some(buffer) } else { None }
 }
 
-/// Wrapper around a `WrenConfiguration`. Refer to `wren.h` for info on each field.
+/// Wrapper around `WrenConfiguration`. Refer to `wren.h` for info on each field.
 pub struct Configuration(ffi::WrenConfiguration);
 
 impl Configuration {
@@ -101,11 +102,23 @@ impl Configuration {
     }
 }
 
-/// Wrapper around a `WrenHandle`.
-#[derive(Copy, Clone)]
-pub struct Handle(*mut ffi::WrenHandle);
+/// Reference-counted wrapper around `WrenHandle`.
+/// Automatically calls `wrenReleaseHandle` when there are no more references.
+#[derive(Clone)]
+pub struct Handle(Rc<RawHandle>);
 
-/// Wrapper around a `WrenForeignClassMethods`.
+struct RawHandle {
+    raw: *mut ffi::WrenHandle,
+    vm: *mut ffi::WrenVM,
+}
+
+impl Drop for RawHandle {
+    fn drop(&mut self) {
+        unsafe { ffi::wrenReleaseHandle(self.vm, self.raw) }
+    }
+}
+
+/// Wrapper around `WrenForeignClassMethods`.
 #[derive(Copy, Clone)]
 pub struct ForeignClassMethods(ffi::WrenForeignClassMethods);
 
@@ -131,7 +144,7 @@ impl ForeignClassMethods {
     }
 }
 
-/// Wrapper around a `WrenVM`. Refer to `wren.h` for info on each function.
+/// Wrapper around `WrenVM`. Refer to `wren.h` for info on each function.
 ///
 /// Some functions have some additional safety features. In particular:
 ///
@@ -188,19 +201,24 @@ impl VM {
     /// Maps to `wrenMakeCallHandle`.
     pub fn make_call_handle(&mut self, signature: &str) -> Handle {
         let signature_cstr = CString::new(signature).unwrap();
-        let handle = unsafe { ffi::wrenMakeCallHandle(self.raw, signature_cstr.as_ptr()) };
-        Handle(handle)
+        let handle = RawHandle {
+            raw: unsafe { ffi::wrenMakeCallHandle(self.raw, signature_cstr.as_ptr()) },
+            vm: self.raw,
+        };
+        Handle(Rc::new(handle))
     }
 
     /// Maps to `wrenCall`.
-    pub fn call(&mut self, method: Handle) -> InterpretResult {
-        unsafe { ffi::wrenCall(self.raw, method.0) }
+    pub fn call(&mut self, method: &Handle) -> InterpretResult {
+        unsafe { ffi::wrenCall(self.raw, method.0.raw) }
     }
 
+    /*
     /// Maps to `wrenReleaseHandle`.
     pub fn release_handle(&mut self, handle: Handle) {
-        unsafe { ffi::wrenReleaseHandle(self.raw, handle.0) }
+        unsafe { ffi::wrenReleaseHandle(self.raw, handle.0.raw) }
     }
+    */
 
     /// Maps to `wrenGetSlotCount`.
     pub fn get_slot_count(&mut self) -> i32 {
@@ -282,8 +300,11 @@ impl VM {
     /// Maps to `wrenGetSlotHandle`.
     pub fn get_slot_handle(&mut self, slot: i32) -> Option<Handle> {
         if self.get_slot_count() > slot {
-            let handle = unsafe { ffi::wrenGetSlotHandle(self.raw, slot) };
-            Some(Handle(handle))
+            let handle = RawHandle {
+                raw: unsafe { ffi::wrenGetSlotHandle(self.raw, slot) },
+                vm: self.raw,
+            };
+            Some(Handle(Rc::new(handle)))
         } else {
             None
         }
@@ -335,9 +356,9 @@ impl VM {
     }
 
     /// Maps to `wrenSetSlotHandle`.
-    pub fn set_slot_handle(&mut self, slot: i32, handle: Handle) {
+    pub fn set_slot_handle(&mut self, slot: i32, handle: &Handle) {
         self.ensure_slots(slot + 1);
-        unsafe { ffi::wrenSetSlotHandle(self.raw, slot, handle.0) }
+        unsafe { ffi::wrenSetSlotHandle(self.raw, slot, handle.0.raw) }
     }
 
     /// Maps to `wrenGetListCount`.

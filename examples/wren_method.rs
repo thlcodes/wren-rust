@@ -14,20 +14,15 @@ fn main() {
     let one = vm.make_call_handle("one(_)");
     let two = vm.make_call_handle("two(_,_)");
 
-    vm.set_slot_handle(0, class_handle);
-    vm.call(zero);
+    vm.set_slot_handle(0, &class_handle);
+    vm.call(&zero);
 
-    vm.set_slot_handle(0, class_handle);
+    vm.set_slot_handle(0, &class_handle);
     vm.set_slot_double(1, 1.0);
-    vm.call(one);
+    vm.call(&one);
 
-    vm.set_slot_handle(0, class_handle);
+    vm.set_slot_handle(0, &class_handle);
     vm.set_slot_double(1, 1.0);
     vm.set_slot_double(2, 2.0);
-    vm.call(two);
-
-    vm.release_handle(class_handle);
-    vm.release_handle(zero);
-    vm.release_handle(one);
-    vm.release_handle(two);
+    vm.call(&two);
 }
