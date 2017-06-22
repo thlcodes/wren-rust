@@ -44,6 +44,7 @@ fn default_load_module(_: &mut VM, name: &str) -> Option<String> {
     if result.is_ok() { Some(buffer) } else { None }
 }
 
+
 /// Wrapper around `WrenConfiguration`. Refer to `wren.h` for info on each field.
 pub struct Configuration(ffi::WrenConfiguration);
 
@@ -370,27 +371,37 @@ impl VM {
         }
     }
 
+    // Checks parameters and converts a negative (relative) list index to an absolute index.
+    // Wren already does the latter, but this way we can check if the index is out of bounds.
+    // (which Wren doesn't do in release builds)
+    fn check_index(&mut self, list_slot: i32, index: i32) -> i32 {
+        assert!(self.get_slot_type(list_slot) == Type::List,
+                "Slot {} must contain a list",
+                list_slot);
+        let list_count = self.get_list_count(list_slot);
+        let index = if index < 0 {
+            list_count + 1 + index
+        } else {
+            index
+        };
+        assert!(index <= list_count, "List index out of bounds");
+        index
+    }
+
     /// Maps to `wrenGetListElement`.
     pub fn get_list_element(&mut self, list_slot: i32, index: i32, element_slot: i32) {
         self.ensure_slots(element_slot + 1);
-        if self.get_slot_type(list_slot) == Type::List && self.get_list_count(list_slot) > index {
-            unsafe { ffi::wrenGetListElement(self.raw, list_slot, index, element_slot) }
-        } else {
-            self.set_slot_null(element_slot)
-        }
+        let index = self.check_index(list_slot, index);
+        unsafe { ffi::wrenGetListElement(self.raw, list_slot, index, element_slot) };
     }
 
     /// Maps to `wrenInsertInList`.
-    ///
-    /// Returns `true` if insertion was successful.
-    pub fn insert_in_list(&mut self, list_slot: i32, index: i32, element_slot: i32) -> bool {
-        if self.get_slot_type(list_slot) == Type::List && self.get_list_count(list_slot) > index &&
-           self.get_slot_count() > element_slot {
-            unsafe { ffi::wrenInsertInList(self.raw, list_slot, index, element_slot) }
-            true
-        } else {
-            false
-        }
+    pub fn insert_in_list(&mut self, list_slot: i32, index: i32, element_slot: i32) {
+        assert!(element_slot < self.get_slot_count(),
+                "No element in slot {}",
+                element_slot);
+        let index = self.check_index(list_slot, index);
+        unsafe { ffi::wrenInsertInList(self.raw, list_slot, index, element_slot) };
     }
 
     /// Maps to `wrenGetVariable`.
