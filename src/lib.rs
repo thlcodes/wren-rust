@@ -29,3 +29,6 @@ pub use self::vm::Configuration;
 pub use self::vm::ForeignClassMethods;
 pub use self::vm::Handle;
 pub use self::vm::VM;
+
+#[cfg(test)]
+mod tests;
