@@ -1,6 +1,6 @@
 use std::mem;
 use std::ptr;
-use std::ffi::CStr;
+use std::ffi::{CStr, CString};
 use libc::*;
 use ffi;
 use VM;
@@ -113,8 +113,10 @@ pub fn _wrap_load_module_fn<F: Fn(&mut VM, &str) -> Option<String>,
         let name = CStr::from_ptr(name).to_str().unwrap();
         let source = mem::transmute::<&(), &F>(&())(&mut vm, name);
         if let Some(source) = source {
-            let buffer = mem::transmute::<&(), &Alloc>(&())(ptr::null_mut(), source.len());
-            memcpy(buffer, source.as_ptr() as *const c_void, source.len());
+            let len = source.len() + 1; // One extra byte for the null terminator.
+            let source_cstr = CString::new(source).unwrap();
+            let buffer = mem::transmute::<&(), &Alloc>(&())(ptr::null_mut(), len);
+            memcpy(buffer, source_cstr.as_ptr() as *mut c_void, len);
             buffer as *mut c_char
         } else {
             ptr::null_mut()
