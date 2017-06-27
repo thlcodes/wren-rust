@@ -104,6 +104,7 @@ impl Configuration {
 }
 
 /// Reference-counted wrapper around `WrenHandle`.
+///
 /// Automatically calls `wrenReleaseHandle` when there are no more references.
 #[derive(Clone)]
 pub struct Handle(Rc<RawHandle>);
@@ -242,7 +243,7 @@ impl VM {
 
     /// Maps to `wrenGetSlotBool`.
     ///
-    /// Performs type checking on the slot, returning `None` if there's a mismatch.
+    /// Returns `None` if the value in `slot` isn't a bool.
     pub fn get_slot_bool(&mut self, slot: i32) -> Option<bool> {
         if self.get_slot_type(slot) == Type::Bool {
             Some(unsafe { ffi::wrenGetSlotBool(self.raw, slot) != 0 })
@@ -253,7 +254,7 @@ impl VM {
 
     /// Maps to `wrenGetSlotBytes`.
     ///
-    /// Performs type checking on the slot, returning `None` if there's a mismatch.
+    /// Returns `None` if the value in `slot` isn't a string.
     pub fn get_slot_bytes(&mut self, slot: i32) -> Option<&[u8]> {
         if self.get_slot_type(slot) == Type::String {
             let mut length = unsafe { mem::uninitialized() };
@@ -266,7 +267,7 @@ impl VM {
 
     /// Maps to `wrenGetSlotDouble`.
     ///
-    /// Performs type checking on the slot, returning `None` if there's a mismatch.
+    /// Returns `None` if the value in `slot` isn't a number.
     pub fn get_slot_double(&mut self, slot: i32) -> Option<f64> {
         if self.get_slot_type(slot) == Type::Num {
             Some(unsafe { ffi::wrenGetSlotDouble(self.raw, slot) })
@@ -277,7 +278,7 @@ impl VM {
 
     /// Maps to `wrenGetSlotForeign`.
     ///
-    /// Performs type checking on the slot, returning `None` if there's a mismatch.
+    /// Returns `None` if the value in `slot` isn't a foreign object.
     pub fn get_slot_foreign(&mut self, slot: i32) -> Option<Pointer> {
         if self.get_slot_type(slot) == Type::Foreign {
             Some(unsafe { ffi::wrenGetSlotForeign(self.raw, slot) })
@@ -295,7 +296,7 @@ impl VM {
 
     /// Maps to `wrenGetSlotString`.
     ///
-    /// Performs type checking on the slot, returning `None` if there's a mismatch.
+    /// Returns `None` if the value in `slot` isn't a string.
     pub fn get_slot_string(&mut self, slot: i32) -> Option<&str> {
         if self.get_slot_type(slot) == Type::String {
             let ptr = unsafe { ffi::wrenGetSlotString(self.raw, slot) };
