@@ -309,16 +309,15 @@ impl VM {
     }
 
     /// Maps to `wrenGetSlotHandle`.
-    pub fn get_slot_handle(&mut self, slot: i32) -> Option<Handle> {
-        if self.get_slot_count() > slot {
-            let handle = RawHandle {
-                raw: unsafe { ffi::wrenGetSlotHandle(self.raw, slot) },
-                vm: self.raw,
-            };
-            Some(Handle(Rc::new(handle)))
-        } else {
-            None
-        }
+    pub fn get_slot_handle(&mut self, slot: i32) -> Handle {
+        assert!(self.get_slot_count() > slot,
+                "Slot {} is out of bounds",
+                slot);
+        let handle = RawHandle {
+            raw: unsafe { ffi::wrenGetSlotHandle(self.raw, slot) },
+            vm: self.raw,
+        };
+        Handle(Rc::new(handle))
     }
 
     /// Maps to `wrenSetSlotBool`.
