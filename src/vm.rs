@@ -286,6 +286,13 @@ impl VM {
         }
     }
 
+    /// Convenience function that calls `wrenGetSlotForeign` and casts the result.
+    ///
+    /// This function uses `mem::transmute` internally and is therefore very unsafe.
+    pub unsafe fn get_slot_foreign_typed<T>(&mut self, slot: i32) -> &mut T {
+        mem::transmute::<Pointer, &mut T>(ffi::wrenGetSlotForeign(self.raw, slot))
+    }
+
     /// Maps to `wrenGetSlotString`.
     ///
     /// Performs type checking on the slot, returning `None` if there's a mismatch.
@@ -335,6 +342,11 @@ impl VM {
     pub fn set_slot_new_foreign(&mut self, slot: i32, class_slot: i32, size: usize) -> Pointer {
         self.ensure_slots(slot + 1);
         unsafe { ffi::wrenSetSlotNewForeign(self.raw, slot, class_slot, size) }
+    }
+
+    /// Convenience function that calls `wrenSetSlotNewForeign` using type information.
+    pub fn set_slot_new_foreign_typed<T>(&mut self, slot: i32, class_slot: i32) -> *mut T {
+        self.set_slot_new_foreign(slot, class_slot, mem::size_of::<T>()) as *mut T
     }
 
     /// Maps to `wrenSetSlotNewList`.
