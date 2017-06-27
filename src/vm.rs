@@ -234,11 +234,10 @@ impl VM {
 
     /// Maps to `wrenGetSlotType`.
     pub fn get_slot_type(&mut self, slot: i32) -> Type {
-        if self.get_slot_count() > slot {
-            unsafe { ffi::wrenGetSlotType(self.raw, slot) }
-        } else {
-            Type::Null
-        }
+        assert!(self.get_slot_count() > slot,
+                "Slot {} is out of bounds",
+                slot);
+        unsafe { ffi::wrenGetSlotType(self.raw, slot) }
     }
 
     /// Maps to `wrenGetSlotBool`.
@@ -291,6 +290,9 @@ impl VM {
     ///
     /// This function uses `mem::transmute` internally and is therefore very unsafe.
     pub unsafe fn get_slot_foreign_typed<T>(&mut self, slot: i32) -> &mut T {
+        assert!(self.get_slot_type(slot) == Type::Foreign,
+                "Slot {} must contain a foreign object",
+                slot);
         mem::transmute::<Pointer, &mut T>(ffi::wrenGetSlotForeign(self.raw, slot))
     }
 
