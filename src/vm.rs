@@ -19,6 +19,7 @@ fn default_error(_: &mut VM, _type: ErrorType, module: &str, line: i32, message:
     }
 }
 
+#[allow(dead_code)]
 fn default_load_module(_: &mut VM, name: &str) -> Option<String> {
     use std::fs::File;
     use std::io::Read;
@@ -65,7 +66,6 @@ impl Configuration {
         let mut cfg = Configuration(raw);
         cfg.set_write_fn(wren_write_fn!(default_write));
         cfg.set_error_fn(wren_error_fn!(default_error));
-        // cfg.set_load_module_fn(wren_load_module_fn!(default_load_module));
         cfg
     }
 

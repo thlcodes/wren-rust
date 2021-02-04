@@ -1,6 +1,6 @@
 use ffi;
 use libc::*;
-use std::ffi::{CStr, CString};
+use std::ffi::{CStr};
 use std::mem;
 use std::ptr;
 use ErrorType;
@@ -84,7 +84,7 @@ fn _assert_size<F>() {
 #[inline]
 pub fn _wrap_reallocate_fn<F: Fn(Pointer, usize) -> Pointer>(_: F) -> ::ReallocateFn {
     unsafe extern "C" fn f<F: Fn(Pointer, usize) -> Pointer>(
-        memory: *mut c_void,
+        _memory: *mut c_void,
         new_size: size_t,
         data: *mut c_void,
     ) -> *mut c_void {
