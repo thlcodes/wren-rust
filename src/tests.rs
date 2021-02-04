@@ -1,4 +1,4 @@
-use {VM, Configuration};
+use {Configuration, VM};
 
 #[test]
 fn list() {

@@ -1,6 +1,6 @@
-use std::process::Command;
-use std::path::Path;
 use std::env;
+use std::path::Path;
+use std::process::Command;
 
 #[allow(dead_code)]
 fn make_debug(dir: &Path) {
@@ -15,7 +15,6 @@ fn make_release(dir: &Path) {
     assert!(status.unwrap().success());
     println!("cargo:rustc-link-lib=static=wren");
 }
-
 
 fn main() {
     let manifest_dir = env::var("CARGO_MANIFEST_DIR").unwrap();

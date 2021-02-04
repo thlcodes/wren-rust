@@ -1,11 +1,11 @@
-use std::mem;
-use std::slice;
+use ffi;
+use libc::c_char;
 use std::ffi::{CStr, CString};
 use std::io;
+use std::mem;
 use std::rc::Rc;
-use libc::{c_int, c_char};
-use ffi;
-use {ErrorType, Type, Pointer, InterpretResult};
+use std::slice;
+use {ErrorType, InterpretResult, Pointer, Type};
 
 fn default_write(_: &mut VM, text: &str) {
     print!("{}", text);
@@ -20,9 +20,9 @@ fn default_error(_: &mut VM, _type: ErrorType, module: &str, line: i32, message:
 }
 
 fn default_load_module(_: &mut VM, name: &str) -> Option<String> {
-    use std::path::PathBuf;
     use std::fs::File;
     use std::io::Read;
+    use std::path::PathBuf;
 
     let mut buffer = String::new();
 
@@ -41,9 +41,12 @@ fn default_load_module(_: &mut VM, name: &str) -> Option<String> {
     name_path.set_extension("wren");
     buffer.clear();
     let result = File::open(&name_path).map(|mut f| f.read_to_string(&mut buffer));
-    if result.is_ok() { Some(buffer) } else { None }
+    if result.is_ok() {
+        Some(buffer)
+    } else {
+        None
+    }
 }
-
 
 /// Wrapper around `WrenConfiguration`. Refer to `wren.h` for info on each field.
 pub struct Configuration(ffi::WrenConfiguration);
@@ -52,13 +55,17 @@ impl Configuration {
     /// Create a new Configuration using `wrenInitConfiguration`.
     ///
     /// This also sets the printing and module loading functions to mimic those used in the CLI interpreter.
+    ///
+    /// See: https://stackoverflow.com/questions/61318595/writing-to-a-field-in-a-maybeuninit-structure
+    ///
     pub fn new() -> Configuration {
-        let mut raw: ffi::WrenConfiguration = unsafe { mem::uninitialized() };
+        let mut raw: ffi::WrenConfiguration =
+            unsafe { mem::MaybeUninit::<ffi::WrenConfiguration>::uninit().assume_init() };
         unsafe { ffi::wrenInitConfiguration(&mut raw) }
         let mut cfg = Configuration(raw);
         cfg.set_write_fn(wren_write_fn!(default_write));
         cfg.set_error_fn(wren_error_fn!(default_error));
-        cfg.set_load_module_fn(wren_load_module_fn!(default_load_module));
+        // cfg.set_load_module_fn(wren_load_module_fn!(default_load_module));
         cfg
     }
 
@@ -127,9 +134,9 @@ pub struct ForeignClassMethods(ffi::WrenForeignClassMethods);
 impl ForeignClassMethods {
     pub fn new() -> ForeignClassMethods {
         ForeignClassMethods(ffi::WrenForeignClassMethods {
-                                allocate: None,
-                                finalize: None,
-                            })
+            allocate: None,
+            finalize: None,
+        })
     }
 
     pub fn set_allocate_fn(&mut self, f: ::ForeignMethodFn) {
@@ -189,6 +196,13 @@ impl VM {
         unsafe { ffi::wrenInterpret(self.raw, source_cstr.as_ptr()) }
     }
 
+    /// Maps to `wrenInterpretInModule`.
+    pub fn interpret_in_module(&mut self, module: &str, source: &str) -> InterpretResult {
+        let module_cstr = CString::new(module).unwrap();
+        let source_cstr = CString::new(source).unwrap();
+        unsafe { ffi::wrenInterpretInModule(self.raw, module_cstr.as_ptr(), source_cstr.as_ptr()) }
+    }
+
     /// Convenience function that loads a script from a file and interprets it.
     pub fn interpret_file(&mut self, path: &str) -> Result<InterpretResult, io::Error> {
         use std::fs::File;
@@ -234,9 +248,11 @@ impl VM {
 
     /// Maps to `wrenGetSlotType`.
     pub fn get_slot_type(&mut self, slot: i32) -> Type {
-        assert!(self.get_slot_count() > slot,
-                "Slot {} is out of bounds",
-                slot);
+        assert!(
+            self.get_slot_count() > slot,
+            "Slot {} is out of bounds",
+            slot
+        );
         unsafe { ffi::wrenGetSlotType(self.raw, slot) }
     }
 
@@ -245,7 +261,7 @@ impl VM {
     /// Returns `None` if the value in `slot` isn't a bool.
     pub fn get_slot_bool(&mut self, slot: i32) -> Option<bool> {
         if self.get_slot_type(slot) == Type::Bool {
-            Some(unsafe { ffi::wrenGetSlotBool(self.raw, slot) != 0 })
+            Some(unsafe { ffi::wrenGetSlotBool(self.raw, slot) != false })
         } else {
             None
         }
@@ -256,7 +272,7 @@ impl VM {
     /// Returns `None` if the value in `slot` isn't a string.
     pub fn get_slot_bytes(&mut self, slot: i32) -> Option<&[u8]> {
         if self.get_slot_type(slot) == Type::String {
-            let mut length = unsafe { mem::uninitialized() };
+            let mut length: i32 = 0;
             let ptr = unsafe { ffi::wrenGetSlotBytes(self.raw, slot, &mut length) };
             Some(unsafe { slice::from_raw_parts(ptr as *const u8, length as usize) })
         } else {
@@ -290,9 +306,11 @@ impl VM {
     ///
     /// This function uses `mem::transmute` internally and is therefore very unsafe.
     pub unsafe fn get_slot_foreign_typed<T>(&mut self, slot: i32) -> &mut T {
-        assert!(self.get_slot_type(slot) == Type::Foreign,
-                "Slot {} must contain a foreign object",
-                slot);
+        assert!(
+            self.get_slot_type(slot) == Type::Foreign,
+            "Slot {} must contain a foreign object",
+            slot
+        );
         mem::transmute::<Pointer, &mut T>(ffi::wrenGetSlotForeign(self.raw, slot))
     }
 
@@ -310,9 +328,11 @@ impl VM {
 
     /// Maps to `wrenGetSlotHandle`.
     pub fn get_slot_handle(&mut self, slot: i32) -> Handle {
-        assert!(self.get_slot_count() > slot,
-                "Slot {} is out of bounds",
-                slot);
+        assert!(
+            self.get_slot_count() > slot,
+            "Slot {} is out of bounds",
+            slot
+        );
         let handle = RawHandle {
             raw: unsafe { ffi::wrenGetSlotHandle(self.raw, slot) },
             vm: self.raw,
@@ -323,7 +343,7 @@ impl VM {
     /// Maps to `wrenSetSlotBool`.
     pub fn set_slot_bool(&mut self, slot: i32, value: bool) {
         self.ensure_slots(slot + 1);
-        unsafe { ffi::wrenSetSlotBool(self.raw, slot, value as c_int) }
+        unsafe { ffi::wrenSetSlotBool(self.raw, slot, value as bool) }
     }
 
     /// Maps to `wrenSetSlotBytes`.
@@ -389,9 +409,11 @@ impl VM {
     // Wren already does the latter, but this way we can check if the index is out of bounds.
     // (which Wren doesn't do in release builds)
     fn check_index(&mut self, list_slot: i32, index: i32) -> i32 {
-        assert!(self.get_slot_type(list_slot) == Type::List,
-                "Slot {} must contain a list",
-                list_slot);
+        assert!(
+            self.get_slot_type(list_slot) == Type::List,
+            "Slot {} must contain a list",
+            list_slot
+        );
         let list_count = self.get_list_count(list_slot);
         let index = if index < 0 {
             list_count + 1 + index
@@ -411,9 +433,11 @@ impl VM {
 
     /// Maps to `wrenInsertInList`.
     pub fn insert_in_list(&mut self, list_slot: i32, index: i32, element_slot: i32) {
-        assert!(element_slot < self.get_slot_count(),
-                "No element in slot {}",
-                element_slot);
+        assert!(
+            element_slot < self.get_slot_count(),
+            "No element in slot {}",
+            element_slot
+        );
         let index = self.check_index(list_slot, index);
         unsafe { ffi::wrenInsertInList(self.raw, list_slot, index, element_slot) };
     }

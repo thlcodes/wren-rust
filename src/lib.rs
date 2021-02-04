@@ -16,14 +16,14 @@ pub use ffi::WrenErrorType as ErrorType;
 pub use ffi::WrenInterpretResult as InterpretResult;
 pub use ffi::WrenType as Type;
 
-pub use ffi::WrenReallocateFn as ReallocateFn;
-pub use ffi::WrenForeignMethodFn as ForeignMethodFn;
-pub use ffi::WrenFinalizerFn as FinalizerFn;
-pub use ffi::WrenLoadModuleFn as LoadModuleFn;
-pub use ffi::WrenBindForeignMethodFn as BindForeignMethodFn;
 pub use ffi::WrenBindForeignClassFn as BindForeignClassFn;
-pub use ffi::WrenWriteFn as WriteFn;
+pub use ffi::WrenBindForeignMethodFn as BindForeignMethodFn;
 pub use ffi::WrenErrorFn as ErrorFn;
+pub use ffi::WrenFinalizerFn as FinalizerFn;
+pub use ffi::WrenForeignMethodFn as ForeignMethodFn;
+pub use ffi::WrenLoadModuleFn as LoadModuleFn;
+pub use ffi::WrenReallocateFn as ReallocateFn;
+pub use ffi::WrenWriteFn as WriteFn;
 
 pub use self::vm::Configuration;
 pub use self::vm::ForeignClassMethods;
