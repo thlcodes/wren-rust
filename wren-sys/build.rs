@@ -29,7 +29,7 @@ fn main() {
     #[cfg(debug_assertions)]
     make_debug(&wren_make_dir, carg);
     #[cfg(not(debug_assertions))]
-    make_release(&wren_make_dir);
+    make_release(&wren_make_dir, carg);
 
     println!("cargo:rustc-link-search=native={}", wren_lib_dir.display());
 }

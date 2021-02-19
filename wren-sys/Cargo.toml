@@ -1,6 +1,6 @@
 [package]
 name = "wren-sys"
-version = "0.3.0"
+version = "0.3.1"
 authors = ["Calvin Ikenberry"]
 description = "FFI bindings to the Wren scripting language API"
 edition = "2018"
